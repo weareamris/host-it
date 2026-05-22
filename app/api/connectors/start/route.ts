@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-
-import {
-  startConnector,
-} from "@/lib/connectorManager";
+import { connectorManager } from "../../../../server/connectors/ConnectorManager";
 
 export async function POST(
   request: Request
@@ -17,7 +14,8 @@ export async function POST(
     const sessionCode =
       body.sessionCode;
 
-    await startConnector(
+    await connectorManager.startConnection(
+      streamerUsername,
       streamerUsername
     );
 
