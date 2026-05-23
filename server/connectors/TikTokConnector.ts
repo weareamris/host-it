@@ -1,3 +1,5 @@
+import { eventBus } from "@/server/events/EventBus";
+
 import {
   WebcastPushConnection,
 } from "tiktok-live-connector";
@@ -54,18 +56,26 @@ export class TikTokConnector {
       this.client.on(
         "gift",
         (data) => {
+          const payload = {
+            type: "gift",
+            streamer:
+              this.username,
+            user:
+              data.uniqueId,
+            gift:
+              data.giftName,
+            amount:
+              data.repeatCount,
+          };
+
           console.log(
-            `[GIFT] ${this.username}`,
-            {
-              user:
-                data.uniqueId,
+            "[GIFT EVENT]",
+            payload
+          );
 
-              gift:
-                data.giftName,
-
-              amount:
-                data.repeatCount,
-            }
+          eventBus.emit(
+            "tiktok-event",
+            payload
           );
         }
       );
@@ -74,15 +84,24 @@ export class TikTokConnector {
       this.client.on(
         "chat",
         (data) => {
-          console.log(
-            `[CHAT] ${this.username}`,
-            {
-              user:
-                data.uniqueId,
+          const payload = {
+            type: "chat",
+            streamer:
+              this.username,
+            user:
+              data.uniqueId,
+            comment:
+              data.comment,
+          };
 
-              comment:
-                data.comment,
-            }
+          console.log(
+            "[CHAT EVENT]",
+            payload
+          );
+
+          eventBus.emit(
+            "tiktok-event",
+            payload
           );
         }
       );
@@ -91,15 +110,24 @@ export class TikTokConnector {
       this.client.on(
         "like",
         (data) => {
-          console.log(
-            `[LIKE] ${this.username}`,
-            {
-              user:
-                data.uniqueId,
+          const payload = {
+            type: "like",
+            streamer:
+              this.username,
+            user:
+              data.uniqueId,
+            likes:
+              data.likeCount,
+          };
 
-              likes:
-                data.likeCount,
-            }
+          console.log(
+            "[LIKE EVENT]",
+            payload
+          );
+
+          eventBus.emit(
+            "tiktok-event",
+            payload
           );
         }
       );
@@ -108,12 +136,22 @@ export class TikTokConnector {
       this.client.on(
         "follow",
         (data) => {
+          const payload = {
+            type: "follow",
+            streamer:
+              this.username,
+            user:
+              data.uniqueId,
+          };
+
           console.log(
-            `[FOLLOW] ${this.username}`,
-            {
-              user:
-                data.uniqueId,
-            }
+            "[FOLLOW EVENT]",
+            payload
+          );
+
+          eventBus.emit(
+            "tiktok-event",
+            payload
           );
         }
       );
