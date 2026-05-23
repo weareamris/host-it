@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { connectorManager }
-import { connectorManager } from "../../../../server/connectors/ConnectorManager";
+
+import { connectorManager } from "@/server/connectors/ConnectorManager";
 
 export async function POST(
   request: Request
