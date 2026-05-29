@@ -2,12 +2,14 @@ type Props = {
   title: string;
   description: string;
   locked?: boolean;
+  href?: string;
 };
 
 export default function GameCard({
   title,
   description,
   locked,
+  href,
 }: Props) {
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 hover:scale-[1.02] transition-all">
@@ -33,11 +35,18 @@ export default function GameCard({
           {description}
         </p>
 
-        <button className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-black font-black hover:scale-[1.02] transition-all">
-          {locked
-            ? "Unlock"
-            : "Launch"}
-        </button>
+        {href ? (
+          <a
+            href={href}
+            className="mt-6 inline-block w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-black font-black text-center hover:scale-[1.02] transition-all"
+          >
+            {locked ? "Unlock" : "Launch"}
+          </a>
+        ) : (
+          <button className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-black font-black hover:scale-[1.02] transition-all">
+            {locked ? "Unlock" : "Launch"}
+          </button>
+        )}
       </div>
     </div>
   );

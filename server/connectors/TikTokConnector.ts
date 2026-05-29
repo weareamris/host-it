@@ -1,4 +1,8 @@
 import { eventBus } from "@/server/events/EventBus";
+import { playerManager } from "@/server/game/PlayerManager";
+import { gameManager } from "@/server/game/GameManager";
+import { bingoManager } from "@/server/game/BingoManager";
+import { storeEvent } from "@/app/api/events/feed/route";
 
 import {
   WebcastPushConnection,
@@ -15,14 +19,21 @@ export class TikTokConnector {
     | WebcastPushConnection
     | null = null;
 
+  private gameId: string;
+
   constructor(
     streamerId: string,
-    username: string
+    username: string,
+    gameId?: string
   ) {
     this.streamerId =
       streamerId;
 
     this.username = username;
+
+    this.gameId =
+      gameId ||
+      `game-${username}-${Date.now()}`;
   }
 
   async connect() {
@@ -77,6 +88,39 @@ export class TikTokConnector {
             "tiktok-event",
             payload
           );
+
+          // Store event for polling
+          storeEvent(
+            this.username,
+            "tiktok-gift",
+            payload
+          );
+
+          bingoManager.lockInGiftPlayer(
+            this.username,
+            data.uniqueId,
+            data.uniqueId
+          );
+
+          // Add to player system if not exists
+          const players =
+            playerManager.getPlayers(
+              this.username
+            );
+          const exists =
+            players.some(
+              (p) =>
+                p.tiktokUsername ===
+                data.uniqueId
+            );
+
+          if (!exists) {
+            playerManager.addPlayer(
+              this.username,
+              data.uniqueId,
+              data.uniqueId
+            );
+          }
         }
       );
 
@@ -103,6 +147,40 @@ export class TikTokConnector {
             "tiktok-event",
             payload
           );
+
+          // Store event for polling
+          storeEvent(
+            this.username,
+            "tiktok-chat",
+            payload
+          );
+
+          // Parse commands from chat
+          this.parseCommand(
+            data.uniqueId,
+            data.uniqueId,
+            data.comment
+          );
+
+          // Add to player system if not exists
+          const players =
+            playerManager.getPlayers(
+              this.username
+            );
+          const exists =
+            players.some(
+              (p) =>
+                p.tiktokUsername ===
+                data.uniqueId
+            );
+
+          if (!exists) {
+            playerManager.addPlayer(
+              this.username,
+              data.uniqueId,
+              data.uniqueId
+            );
+          }
         }
       );
 
@@ -129,6 +207,13 @@ export class TikTokConnector {
             "tiktok-event",
             payload
           );
+
+          // Store event for polling
+          storeEvent(
+            this.username,
+            "tiktok-like",
+            payload
+          );
         }
       );
 
@@ -153,6 +238,33 @@ export class TikTokConnector {
             "tiktok-event",
             payload
           );
+
+          // Store event for polling
+          storeEvent(
+            this.username,
+            "tiktok-follow",
+            payload
+          );
+
+          // Add as player
+          const players =
+            playerManager.getPlayers(
+              this.username
+            );
+          const exists =
+            players.some(
+              (p) =>
+                p.tiktokUsername ===
+                data.uniqueId
+            );
+
+          if (!exists) {
+            playerManager.addPlayer(
+              this.username,
+              data.uniqueId,
+              data.uniqueId
+            );
+          }
         }
       );
 
@@ -191,9 +303,195 @@ export class TikTokConnector {
     this.connected = false;
 
     this.client = null;
+
+    // Clear players for this streamer
+    playerManager.clearStreamer(
+      this.username
+    );
   }
 
   isConnected() {
     return this.connected;
+  }
+
+  getGameId() {
+    return this.gameId;
+  }
+
+  private parseCommand(
+    userId: string,
+    displayName: string,
+    comment: string
+  ) {
+    const trimmed =
+      comment.toLowerCase().trim();
+
+    // Join game command
+    if (
+      trimmed ===
+        "!join" ||
+      trimmed === "!play"
+    ) {
+      const player =
+        playerManager.addPlayer(
+          this.username,
+          userId,
+          displayName
+        );
+
+      if (player) {
+        gameManager.addPlayer(
+          this.gameId,
+          player.id,
+          displayName
+        );
+      }
+
+      console.log(
+        `[COMMAND] ${displayName} joined`
+      );
+    }
+
+    // Box selection (e.g., "!box 1" or "1")
+    const boxMatch =
+      trimmed.match(
+        /!?box\s*(\d+)|^(\d)$/
+      );
+
+    if (boxMatch) {
+      const boxNum = boxMatch[1] ||
+        boxMatch[2];
+      const players =
+        playerManager.getPlayers(
+          this.username
+        );
+      const player =
+        players.find(
+          (p) =>
+            p.tiktokUsername ===
+            userId
+        );
+
+      if (player) {
+        gameManager.processPlayerAction(
+          this.gameId,
+          player.id,
+          `choose-box-${boxNum}`
+        );
+
+        storeEvent(
+          this.username,
+          "command-executed",
+          {
+            command: "box-chosen",
+            user: displayName,
+            box: boxNum,
+          }
+        );
+
+        console.log(
+          `[COMMAND] ${displayName} chose box ${boxNum}`
+        );
+      }
+    }
+
+    // Accept offer
+    if (trimmed === "!yes" ||
+      trimmed === "!accept"
+    ) {
+      const players =
+        playerManager.getPlayers(
+          this.username
+        );
+      const player =
+        players.find(
+          (p) =>
+            p.tiktokUsername ===
+            userId
+        );
+
+      if (player) {
+        gameManager.processPlayerAction(
+          this.gameId,
+          player.id,
+          "accept-offer"
+        );
+
+        storeEvent(
+          this.username,
+          "command-executed",
+          {
+            command: "offer-accepted",
+            user: displayName,
+          }
+        );
+
+        console.log(
+          `[COMMAND] ${displayName} accepted offer`
+        );
+      }
+    }
+
+    // Reject offer
+    if (trimmed === "!no" ||
+      trimmed === "!reject"
+    ) {
+      const players =
+        playerManager.getPlayers(
+          this.username
+        );
+      const player =
+        players.find(
+          (p) =>
+            p.tiktokUsername ===
+            userId
+        );
+
+      if (player) {
+        gameManager.processPlayerAction(
+          this.gameId,
+          player.id,
+          "reject-offer"
+        );
+
+        storeEvent(
+          this.username,
+          "command-executed",
+          {
+            command: "offer-rejected",
+            user: displayName,
+          }
+        );
+
+        console.log(
+          `[COMMAND] ${displayName} rejected offer`
+        );
+      }
+    }
+
+    // Set as controller
+    if (trimmed === "!control") {
+      const players =
+        playerManager.getPlayers(
+          this.username
+        );
+      const player =
+        players.find(
+          (p) =>
+            p.tiktokUsername ===
+            userId
+        );
+
+      if (player) {
+        playerManager.setController(
+          this.username,
+          player.id
+        );
+
+        console.log(
+          `[COMMAND] ${displayName} is now controller`
+        );
+      }
+    }
   }
 }

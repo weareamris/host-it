@@ -55,7 +55,7 @@ type TikTokGift = {
 
 const ROUND_TARGETS = [5, 4, 3, 2, 1, 1];
 
-export default function MysteryBoxSessionPage({
+export default function BeatTheBankerSessionPage({
   params,
 }: {
   params: Promise<{ sessionId: string }>;

@@ -74,6 +74,12 @@ export default function HomePage() {
           />
 
           <GameCard
+            title="Bingo Bash"
+            description="Eight gift-locked players get a randomized bingo card, with line and full house prizes."
+            href="/games/bingo/setup"
+          />
+
+          <GameCard
             title="Mystery Drop"
             description="Viewers unlock randomized rewards live on stream."
             locked

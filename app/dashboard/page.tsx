@@ -75,31 +75,16 @@ export default function DashboardPage() {
 
   }, [router]);
 
-  const launchGame =
-    async () => {
+  const goToSetup = () => {
+    router.push("/games/beat-the-banker/setup");
+  };
 
-    if (!streamer) return;
+  const goToStudio = () => {
+    router.push("/overlay/studio");
+  };
 
-    await fetch(
-      "/api/connectors/start",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          streamerUsername:
-            streamer.tiktok_username,
-        }),
-      }
-    );
-
-    router.push(
-      `/games/beat-the-banker/${streamer.tiktok_username}`
-    );
+  const goToMobileControl = () => {
+    router.push("/overlay/mobile-control");
   };
 
   const logout =
@@ -164,19 +149,49 @@ export default function DashboardPage() {
         <div className="grid md:grid-cols-3 gap-8">
 
           <button
-            onClick={launchGame}
+            onClick={goToSetup}
             className="rounded-3xl border border-cyan-400/20 bg-white/5 p-10 hover:bg-white/10 transition text-left shadow-[0_0_40px_rgba(34,211,238,0.15)]"
           >
 
             <h2 className="text-3xl font-black mb-4">
 
-              Beat The Banker
+              Beat The Banker Setup
 
             </h2>
 
             <p className="text-zinc-400">
 
-              Launch streamer control panel
+              Configure game session before launch
+
+            </p>
+
+          </button>
+
+          <button
+            onClick={() => router.push("/games/bingo/setup")}
+            className="rounded-3xl border border-emerald-400/20 bg-white/5 p-10 hover:bg-white/10 transition text-left shadow-[0_0_40px_rgba(34,211,238,0.08)]"
+          >
+
+            <h2 className="text-3xl font-black mb-4">Bingo Setup</h2>
+
+            <p className="text-zinc-400">Launch an 8-player gift-lock Bingo session</p>
+
+          </button>
+
+          <button
+            onClick={() => router.push("/overlay/studio")}
+            className="rounded-3xl border border-fuchsia-400/20 bg-white/5 p-10 hover:bg-white/10 transition text-left shadow-[0_0_40px_rgba(192,38,211,0.15)]"
+          >
+
+            <h2 className="text-3xl font-black mb-4">
+
+              Overlay Studio
+
+            </h2>
+
+            <p className="text-zinc-400">
+
+              Open standalone broadcaster overlay controls
 
             </p>
 

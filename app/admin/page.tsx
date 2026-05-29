@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { supabase } from "../../lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export default function AdminPage() {
   const [username, setUsername] =
     useState("");
@@ -71,9 +73,36 @@ export default function AdminPage() {
           Beat The Banker
         </h2>
 
-        <p className="text-zinc-400 text-lg">
-          Your live game configuration tools will appear here.
+        <p className="text-zinc-400 text-lg mb-8">
+          Access your live game setup tools for TikTok audience control and prize board configuration.
         </p>
+
+        <div className="flex flex-wrap gap-4">
+          <a
+            href="/games/beat-the-banker/setup"
+            className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+          >
+            Open Beat The Banker Setup
+          </a>
+          <a
+            href="/overlay/studio"
+            className="inline-flex items-center justify-center rounded-2xl bg-fuchsia-500 px-6 py-4 text-sm font-semibold text-white transition hover:bg-fuchsia-400"
+          >
+            Open Overlay Studio
+          </a>
+          <a
+            href="/overlay/mobile-control"
+            className="inline-flex items-center justify-center rounded-2xl bg-violet-500 px-6 py-4 text-sm font-semibold text-white transition hover:bg-violet-400"
+          >
+            Open Mobile Companion
+          </a>
+          <a
+            href="/games/beat-the-banker/setup?sessionId=demo"
+            className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            Quick Demo Setup
+          </a>
+        </div>
       </div>
     </main>
   );
