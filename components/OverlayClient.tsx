@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { PRIZE_REGISTRY } from "@/lib/giftRegistry";
 
 type OverlayEvent = {
   type: string;
@@ -18,10 +19,10 @@ type ChatMessage = {
   message: string;
 };
 
-type CustomSound = {
-  id: string;
-  name: string;
-  url: string;
+type GiftSound = {
+  giftId: string;
+  giftName: string;
+  audioUrl: string;
 };
 
 const DEFAULT_CHAT: ChatMessage[] = [
@@ -43,7 +44,54 @@ export default function OverlayClient({
   const [latestId, setLatestId] = useState("0");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEFAULT_CHAT);
   const [activeEffect, setActiveEffect] = useState<string | null>(null);
+  const [giftSounds, setGiftSounds] = useState<GiftSound[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Load gift sounds from localStorage on mount
+  useEffect(() => {
+    const stored = window.localStorage.getItem("giftSounds");
+    if (stored) {
+      try {
+        setGiftSounds(JSON.parse(stored));
+      } catch (error) {
+        console.error("[Overlay] Failed to parse gift sounds:", error);
+      }
+    }
+
+    // Initialize audio element
+    if (typeof window !== "undefined") {
+      audioRef.current = new Audio();
+    }
+  }, []);
+
+  // Play gift sound when a gift event occurs
+  useEffect(() => {
+    if (currentAlert?.type === "gift" && currentAlert.gift && audioRef.current) {
+      // Normalize gift name: match against stored gift sounds
+      const matchingSound = giftSounds.find((sound) => {
+        // Try exact match first
+        if (sound.giftName.toLowerCase() === currentAlert.gift?.toLowerCase()) {
+          return true;
+        }
+        // Try partial match for gift names
+        return sound.giftName.toLowerCase().includes(currentAlert.gift?.toLowerCase() || "");
+      });
+
+      if (matchingSound) {
+        try {
+          audioRef.current.src = matchingSound.audioUrl;
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch((error) => {
+            console.error("[Overlay] Audio playback failed:", error);
+          });
+        } catch (error) {
+          console.error("[Overlay] Error playing gift sound:", error);
+        }
+      }
+    }
+  }, [currentAlert, giftSounds]);
+
+  // Poll for events from the feed
   useEffect(() => {
     const pollEvents = async () => {
       try {
@@ -108,6 +156,9 @@ export default function OverlayClient({
 
   return (
     <main className="w-screen h-screen overflow-hidden bg-transparent text-white">
+      {/* Hidden audio element for gift sounds */}
+      <audio ref={audioRef} crossOrigin="anonymous" />
+
       {activeEffect && (
         <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
@@ -168,7 +219,7 @@ export default function OverlayClient({
         </div>
       )}
 
-      <div className="absolute bottom-4 right-4 left-4 mx-auto w-auto max-w-[calc(100vw-2rem)] rounded-3xl border border-white/10 bg-black/40 p-5 shadow-[0_0_60px_rgba(255,255,255,0.08)] backdrop-blur-3xl lg:right-10 lg:left-auto lg:w-96">
+      <div className="absolute bottom-4 right-4 left-4 mx-auto w-auto max-w-[calc(100vw-2rem)] rounded-3xl border border-white/10 bg-black/40 p-5 shadow-[0_0_60px_rgba(255,255,255,0.08)] backdrop-blur-2xl">
         <div className="text-sm uppercase tracking-[0.2em] text-fuchsia-300 font-bold mb-3">Live feed</div>
         <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
           {events.length === 0 ? (
