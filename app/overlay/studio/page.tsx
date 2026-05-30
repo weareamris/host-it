@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { PRIZE_REGISTRY } from "@/lib/giftRegistry";
 
 const DEFAULT_LIKE_GOAL = 1000;
 const THEME_PRESETS = [
@@ -26,6 +27,12 @@ const STICKER_OPTIONS = [
   { id: "fireworks", label: "Fireworks" },
 ];
 
+type GiftSound = {
+  giftId: string;
+  giftName: string;
+  audioUrl: string;
+};
+
 export default function OverlayStudioPage() {
   const [bannerText, setBannerText] = useState("Welcome to the stream!");
   const [bannerEnabled, setBannerEnabled] = useState(true);
@@ -46,54 +53,24 @@ export default function OverlayStudioPage() {
   const [copiedPreviewLink, setCopiedPreviewLink] = useState(false);
   const [chatMessages, setChatMessages] = useState(SAMPLE_CHAT_MESSAGES);
   const [stickerActive, setStickerActive] = useState(false);
-  const [customSounds, setCustomSounds] = useState<Array<{ id: string; name: string; url: string }>>([
-  ]);
   const [ttsVoiceEnabled, setTtsVoiceEnabled] = useState(true);
   const [audioPreview, setAudioPreview] = useState<HTMLAudioElement | null>(null);
+  
+  // Gift sound state
+  const [giftSounds, setGiftSounds] = useState<GiftSound[]>([]);
+  const [selectedGiftForSound, setSelectedGiftForSound] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const overlayUrl = `/overlay/mobile-view/${mobilePreviewUsername}`;
 
+  // Initialize audio preview
   useEffect(() => {
     if (typeof window !== "undefined") {
       setAudioPreview(new Audio());
     }
   }, []);
 
-  function handleAudioUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      alert("Audio file must be less than 10MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      const newSound = {
-        id: `sound-${Date.now()}`,
-        name: file.name,
-        url: dataUrl,
-      };
-      setCustomSounds((prev) => [...prev, newSound]);
-    };
-    reader.readAsDataURL(file);
-    event.target.value = ""; // Reset file input
-  }
-
-  function handlePlayAudioPreview(soundUrl: string) {
-    if (!audioPreview) return;
-    audioPreview.src = soundUrl;
-    audioPreview.play().catch(() => console.error("Audio playback failed"));
-  }
-
-  function handleRemoveSound(soundId: string) {
-    setCustomSounds((prev) => prev.filter((s) => s.id !== soundId));
-  }
-
+  // Load gift sounds from localStorage
   useEffect(() => {
     const stored = window.localStorage.getItem("overlayStudioSettings");
     if (stored) {
@@ -119,16 +96,17 @@ export default function OverlayStudioPage() {
       }
     }
 
-    const storedSounds = window.localStorage.getItem("customSounds");
-    if (storedSounds) {
+    const storedGiftSounds = window.localStorage.getItem("giftSounds");
+    if (storedGiftSounds) {
       try {
-        setCustomSounds(JSON.parse(storedSounds));
+        setGiftSounds(JSON.parse(storedGiftSounds));
       } catch {
         // ignore malformed data
       }
     }
   }, []);
 
+  // Save overlay settings to localStorage
   useEffect(() => {
     window.localStorage.setItem(
       "overlayStudioSettings",
@@ -168,15 +146,69 @@ export default function OverlayStudioPage() {
     ttsVoiceEnabled,
   ]);
 
+  // Save gift sounds to localStorage
   useEffect(() => {
-    window.localStorage.setItem("customSounds", JSON.stringify(customSounds));
-  }, [customSounds]);
+    window.localStorage.setItem("giftSounds", JSON.stringify(giftSounds));
+  }, [giftSounds]);
 
+  // Sticker timeout
   useEffect(() => {
     if (!stickerActive) return;
     const timer = window.setTimeout(() => setStickerActive(false), 2500);
     return () => window.clearTimeout(timer);
   }, [stickerActive]);
+
+  function handleAddGiftSound() {
+    if (!selectedGiftForSound) {
+      alert("Please select a gift first");
+      return;
+    }
+    fileInputRef.current?.click();
+  }
+
+  function handleGiftAudioUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !selectedGiftForSound) return;
+
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert("Audio file must be less than 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      
+      // Find the gift name
+      const giftName = PRIZE_REGISTRY.find(g => g.id === selectedGiftForSound)?.name || selectedGiftForSound;
+      
+      // Check if this gift already has a sound, if so replace it
+      setGiftSounds((prev) => {
+        const filtered = prev.filter(gs => gs.giftId !== selectedGiftForSound);
+        return [...filtered, {
+          giftId: selectedGiftForSound,
+          giftName,
+          audioUrl: dataUrl,
+        }];
+      });
+
+      setSelectedGiftForSound("");
+    };
+    reader.readAsDataURL(file);
+    event.target.value = ""; // Reset file input
+  }
+
+  function handlePlayAudioPreview(audioUrl: string) {
+    if (!audioPreview) return;
+    audioPreview.src = audioUrl;
+    audioPreview.play().catch(() => console.error("Audio playback failed"));
+  }
+
+  function handleRemoveGiftSound(giftId: string) {
+    setGiftSounds((prev) => prev.filter((gs) => gs.giftId !== giftId));
+  }
 
   function handleTestTTS() {
     setPreviewEvent("TTS: " + ttsMessage);
@@ -208,6 +240,7 @@ export default function OverlayStudioPage() {
   }
 
   const themeAccent = THEME_PRESETS.find((preset) => preset.id === theme)?.accent || "cyan";
+  const enabledGifts = PRIZE_REGISTRY.filter(g => g.enabled);
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 sm:p-6">
@@ -217,7 +250,7 @@ export default function OverlayStudioPage() {
             <div>
               <h1 className="text-5xl font-black tracking-tight text-white">Overlay Studio</h1>
               <p className="mt-4 max-w-3xl text-slate-300 text-lg">
-                Build Tikfinity-grade stream overlays for desktop and mobile. Configure alert styles, animated stickers, chat feed, goal meters, OBS transparency, and mobile preview links all in one place.
+                Build Tikfinity-grade stream overlays for desktop and mobile. Configure alert styles, animated stickers, chat feed, goal meters, OBS transparency, gift-triggered sounds, and mobile preview links all in one place.
               </p>
             </div>
             <div className="rounded-3xl border border-cyan-500/15 bg-cyan-500/10 px-6 py-4 text-slate-100 shadow-xl">
@@ -336,64 +369,71 @@ export default function OverlayStudioPage() {
             </div>
 
             <div className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 shadow-xl">
-              <h2 className="text-3xl font-black text-white">Audio & Voice</h2>
-              <p className="mt-3 text-slate-400">Upload unlimited custom gift alert sounds and manage text-to-speech voice.</p>
+              <h2 className="text-3xl font-black text-white">Gift Sounds</h2>
+              <p className="mt-3 text-slate-400">Assign custom audio alerts to specific TikTok gifts. When a gift is received during your stream, the assigned sound plays in real-time on your overlay.</p>
 
-              <div className="mt-6 grid gap-4">
-                <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={ttsVoiceEnabled}
-                    onChange={(event) => setTtsVoiceEnabled(event.target.checked)}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-cyan-400"
-                  />
-                  Enable TTS voice announcements
-                </label>
-
-                <div className="rounded-3xl border border-slate-700 bg-slate-950/80 p-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400 font-semibold mb-4">Upload Custom Sounds</p>
-                  
-                  <label className="block cursor-pointer">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleAudioUpload}
-                      className="hidden"
-                      multiple={false}
-                    />
-                    <div className="rounded-2xl border-2 border-dashed border-slate-600 px-6 py-8 text-center hover:border-slate-500 transition">
-                      <p className="text-5xl mb-2">🎵</p>
-                      <p className="text-sm font-semibold text-slate-300">Click to add sound</p>
-                      <p className="text-xs text-slate-500 mt-2">Add unlimited sounds (max 10MB each)</p>
-                    </div>
+              <div className="mt-6 space-y-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <label className="space-y-2 text-sm text-slate-300">
+                    Add Gift Sound
+                    <select
+                      value={selectedGiftForSound}
+                      onChange={(event) => setSelectedGiftForSound(event.target.value)}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+                    >
+                      <option value="">Select a gift...</option>
+                      {enabledGifts.map((gift) => (
+                        <option key={gift.id} value={gift.id}>
+                          {gift.name} ({gift.value} pts)
+                        </option>
+                      ))}
+                    </select>
                   </label>
+                  <button
+                    type="button"
+                    onClick={handleAddGiftSound}
+                    disabled={!selectedGiftForSound}
+                    className="self-end rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Upload Audio
+                  </button>
                 </div>
 
-                {customSounds.length > 0 && (
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleGiftAudioUpload}
+                  className="hidden"
+                />
+
+                {giftSounds.length > 0 && (
                   <div className="rounded-3xl border border-slate-700 bg-slate-950/80 p-4">
-                    <p className="text-sm uppercase tracking-[0.2em] text-slate-400 font-semibold mb-3">Your Sounds ({customSounds.length})</p>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {customSounds.map((sound) => (
+                    <p className="text-sm uppercase tracking-[0.2em] text-slate-400 font-semibold mb-3">
+                      Configured Sounds ({giftSounds.length})
+                    </p>
+                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                      {giftSounds.map((sound) => (
                         <div
-                          key={sound.id}
+                          key={sound.giftId}
                           className="flex items-center justify-between gap-3 rounded-2xl bg-black/40 px-4 py-3"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-300 truncate">
-                              {sound.name}
+                            <p className="text-sm font-medium text-slate-300">
+                              🎁 {sound.giftName}
                             </p>
                           </div>
                           <div className="flex gap-2 flex-shrink-0">
                             <button
                               type="button"
-                              onClick={() => handlePlayAudioPreview(sound.url)}
+                              onClick={() => handlePlayAudioPreview(sound.audioUrl)}
                               className="rounded-lg bg-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition"
                             >
                               ▶ Play
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleRemoveSound(sound.id)}
+                              onClick={() => handleRemoveGiftSound(sound.giftId)}
                               className="rounded-lg bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/30 transition"
                             >
                               ✕ Remove
@@ -406,8 +446,41 @@ export default function OverlayStudioPage() {
                 )}
 
                 <div className="rounded-3xl border border-slate-700 bg-black/60 p-4">
-                  <p className="text-sm text-slate-400 mb-3">💡 <strong>Tip:</strong> Upload as many custom sounds as you want! When a gift alert triggers on your overlay, one of your sounds will play randomly. Mix and match: air horns, chimes, victory fanfares, or any audio you want!</p>
+                  <p className="text-sm text-slate-400 mb-2">💡 <strong>How it works:</strong></p>
+                  <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
+                    <li>Select a gift from your TikTok gift registry</li>
+                    <li>Upload a custom audio file (max 10MB)</li>
+                    <li>Add multiple gift sounds by repeating the process</li>
+                    <li>When someone sends that gift during your stream, the sound plays automatically in real-time on your overlay</li>
+                  </ul>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 shadow-xl">
+              <h2 className="text-3xl font-black text-white">Audio & Voice</h2>
+              <p className="mt-3 text-slate-400">Configure text-to-speech voice announcements for stream events.</p>
+
+              <div className="mt-6 grid gap-4">
+                <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={ttsVoiceEnabled}
+                    onChange={(event) => setTtsVoiceEnabled(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-cyan-400"
+                  />
+                  Enable TTS voice announcements
+                </label>
+
+                <label className="space-y-2 text-sm text-slate-300">
+                  TTS Message
+                  <input
+                    value={ttsMessage}
+                    onChange={(event) => setTtsMessage(event.target.value)}
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+                    placeholder="Custom TTS announcement"
+                  />
+                </label>
               </div>
             </div>
 
