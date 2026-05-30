@@ -1,16 +1,166 @@
-import SignupForm from "@/components/SignupForm";
+"use client";
+
+import { useState } from "react";
+
+import { supabase } from "../../lib/supabase";
+
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+  const router = useRouter();
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [tiktokUsername,
+    setTiktokUsername] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  async function handleSignup() {
+    try {
+      setLoading(true);
+
+      // CREATE AUTH USER
+      const {
+        data,
+        error,
+      } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      const authUser =
+        data.user;
+
+      if (!authUser) {
+        alert(
+          "No auth user returned"
+        );
+        return;
+      }
+
+      // CREATE STREAMER PROFILE
+      const {
+        error: profileError,
+      } = await supabase
+        .from("streamers")
+        .insert({
+          auth_user_id:
+            authUser.id,
+
+          tiktok_username:
+            tiktokUsername,
+
+          display_name:
+            tiktokUsername,
+        });
+
+      if (profileError) {
+        console.error(
+          profileError
+        );
+
+        alert(
+          profileError.message
+        );
+
+        return;
+      }
+
+      // AUTO LOGIN
+      await supabase.auth.signInWithPassword(
+        {
+          email,
+          password,
+        }
+      );
+
+      router.push(
+        "/dashboard"
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-[#050816] text-white">
-      <div className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
-        <div className="rounded-[32px] border border-white/10 bg-[#0b1220]/90 p-10 shadow-2xl shadow-black/40">
-          <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.35em] text-cyan-300">Create account</p>
-            <h1 className="mt-4 text-4xl font-black text-white">Sign up for Host It</h1>
-            <p className="mt-4 text-slate-300">Use promo code <strong>amris001</strong> at signup to receive free creator access.</p>
-          </div>
-          <SignupForm />
+    <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+
+      <div className="w-full max-w-md rounded-3xl border border-cyan-400/20 bg-white/5 backdrop-blur-2xl p-10 shadow-[0_0_60px_rgba(34,211,238,0.15)]">
+
+        <h1 className="text-5xl font-black mb-2">
+
+          HOST
+          <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-violet-400 bg-clip-text text-transparent">
+            {" "}
+            IT!
+          </span>
+        </h1>
+
+        <p className="text-zinc-400 mb-8">
+          Create your streamer account
+        </p>
+
+        <div className="space-y-4">
+
+          <input
+            type="text"
+            placeholder="TikTok Username"
+            value={tiktokUsername}
+            onChange={(e) =>
+              setTiktokUsername(
+                e.target.value
+              )
+            }
+            className="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none"
+          />
+
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
+            className="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none"
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+            className="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none"
+          />
+
+          <button
+            onClick={handleSignup}
+            disabled={loading}
+            className="w-full rounded-2xl bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-violet-500 py-3 font-bold text-lg hover:opacity-90 transition"
+          >
+            {loading
+              ? "Creating..."
+              : "Create Account"}
+          </button>
         </div>
       </div>
     </main>
