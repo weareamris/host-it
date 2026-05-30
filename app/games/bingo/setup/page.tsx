@@ -2,27 +2,42 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PRIZE_REGISTRY } from "@/lib/giftRegistry";
 
 export default function BingoSetupPage() {
   const router = useRouter();
   const [username, setUsername] = useState("demo");
-  const [linePrize, setLinePrize] = useState("£250 line prize");
-  const [housePrize, setHousePrize] = useState("£1,000 full house prize");
+  const [selectedLinePrizeGift, setSelectedLinePrizeGift] = useState(PRIZE_REGISTRY[0]?.id || "");
+  const [selectedHousePrizeGift, setSelectedHousePrizeGift] = useState(PRIZE_REGISTRY[1]?.id || "");
+  const [selectedTriggerGift, setSelectedTriggerGift] = useState(PRIZE_REGISTRY[2]?.id || "");
   const [status, setStatus] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
+  const enabledGifts = PRIZE_REGISTRY.filter(g => g.enabled);
+
   async function createSession() {
+    if (!selectedLinePrizeGift || !selectedHousePrizeGift || !selectedTriggerGift) {
+      setStatus("Please select all prizes and trigger gift");
+      return;
+    }
+
     setCreating(true);
     setStatus(null);
 
     try {
+      // Get gift names
+      const linePrizeGift = enabledGifts.find(g => g.id === selectedLinePrizeGift);
+      const housePrizeGift = enabledGifts.find(g => g.id === selectedHousePrizeGift);
+      const triggerGift = enabledGifts.find(g => g.id === selectedTriggerGift);
+
       const res = await fetch("/api/bingo/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           streamerUsername: username,
-          linePrize,
-          housePrize,
+          linePrizeGift: linePrizeGift?.name,
+          housePrizeGift: housePrizeGift?.name,
+          triggerGift: triggerGift?.name,
         }),
       });
 
@@ -70,7 +85,7 @@ export default function BingoSetupPage() {
             <div>
               <h1 className="text-5xl font-black tracking-tight">Bingo Setup</h1>
               <p className="mt-3 text-slate-400 max-w-3xl">
-                Launch an 8-player gift-trigger bingo session. Viewers gift to lock in a randomized card, and the game begins when 8 players are locked or you press Eyes Down.
+                Launch an 8-player gift-trigger bingo session. Configure your prizes, set a trigger gift, and viewers can lock in cards. Streamer can start anytime with 2+ contestants!
               </p>
             </div>
             <div className="rounded-3xl border border-cyan-500/20 bg-black/30 p-4 text-center">
@@ -90,33 +105,96 @@ export default function BingoSetupPage() {
             </label>
 
             <label className="space-y-2 text-sm text-slate-300">
-              Line prize text
-              <input
-                value={linePrize}
-                onChange={(event) => setLinePrize(event.target.value)}
+              Trigger Gift (contestants lock in with this)
+              <select
+                value={selectedTriggerGift}
+                onChange={(event) => setSelectedTriggerGift(event.target.value)}
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
-              />
+              >
+                <option value="">Select trigger gift...</option>
+                {enabledGifts.map((gift) => (
+                  <option key={gift.id} value={gift.id}>
+                    {gift.name} ({gift.value} pts)
+                  </option>
+                ))}
+              </select>
             </label>
 
-            <label className="space-y-2 text-sm text-slate-300 lg:col-span-2">
-              Full house prize text
-              <input
-                value={housePrize}
-                onChange={(event) => setHousePrize(event.target.value)}
+            <label className="space-y-2 text-sm text-slate-300">
+              Line Winner Prize
+              <select
+                value={selectedLinePrizeGift}
+                onChange={(event) => setSelectedLinePrizeGift(event.target.value)}
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
-              />
+              >
+                <option value="">Select line prize...</option>
+                {enabledGifts.map((gift) => (
+                  <option key={gift.id} value={gift.id}>
+                    {gift.name} ({gift.value} pts)
+                  </option>
+                ))}
+              </select>
             </label>
+
+            <label className="space-y-2 text-sm text-slate-300">
+              Full House Winner Prize
+              <select
+                value={selectedHousePrizeGift}
+                onChange={(event) => setSelectedHousePrizeGift(event.target.value)}
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+              >
+                <option value="">Select house prize...</option>
+                {enabledGifts.map((gift) => (
+                  <option key={gift.id} value={gift.id}>
+                    {gift.name} ({gift.value} pts)
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-8 rounded-3xl border border-slate-700 bg-black/40 p-6">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 rounded-full bg-cyan-500/20 px-2 py-1 text-xs text-cyan-300">1</div>
+                <div>
+                  <p className="font-semibold text-white">Viewers send trigger gift to lock in</p>
+                  <p className="text-sm text-slate-400 mt-1">Max 8 contestants, game starts when 2+ join or streamer clicks "Eyes Down"</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-1 rounded-full bg-cyan-500/20 px-2 py-1 text-xs text-cyan-300">2</div>
+                <div>
+                  <p className="font-semibold text-white">Streamer calls numbers during the game</p>
+                  <p className="text-sm text-slate-400 mt-1">Each called number is drawn every ~4.5 seconds</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-1 rounded-full bg-cyan-500/20 px-2 py-1 text-xs text-cyan-300">3</div>
+                <div>
+                  <p className="font-semibold text-white">Line winner appears for 20 seconds with prize</p>
+                  <p className="text-sm text-slate-400 mt-1">Game continues until full house is completed</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-1 rounded-full bg-cyan-500/20 px-2 py-1 text-xs text-cyan-300">4</div>
+                <div>
+                  <p className="font-semibold text-white">House winner appears for 20 seconds with prize</p>
+                  <p className="text-sm text-slate-400 mt-1">Streamer can restart to begin new round</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-slate-400">After the session is created, viewers gift to lock in a card and the streamer can start the caller anytime.</p>
+              <p className="text-slate-400">Configure all fields above, then create the session.</p>
             </div>
             <button
               type="button"
               onClick={createSession}
-              disabled={creating}
-              className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-4 text-sm font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={creating || !selectedLinePrizeGift || !selectedHousePrizeGift || !selectedTriggerGift}
+              className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-4 text-sm font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               {creating ? "Creating…" : "Create Bingo Session"}
             </button>
