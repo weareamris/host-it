@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PRIZE_REGISTRY } from "@/lib/giftRegistry";
 
 type TikTokGift = {
   id: number;
@@ -27,7 +28,7 @@ function generateSessionId() {
 export default function BeatTheBankerSetupPage() {
   const router = useRouter();
   const [sessionId, setSessionId] = useState("");
-  const [giftCatalog, setGiftCatalog] = useState<TikTokGift[]>([]);
+  const [giftCatalog, setGiftCatalog] = useState(PRIZE_REGISTRY.filter(p => p.enabled));
   const [triggerGift, setTriggerGift] = useState("");
   const [jackpotGift, setJackpotGift] = useState("");
   const [boxCount, setBoxCount] = useState(DEFAULT_BOX_COUNT);
@@ -42,11 +43,10 @@ export default function BeatTheBankerSetupPage() {
   const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   const sortedGiftCatalog = useMemo(() => {
-    return [...giftCatalog].sort((a, b) => a.gift_value - b.gift_value);
+    return [...giftCatalog].sort((a, b) => a.value - b.value);
   }, [giftCatalog]);
 
   useEffect(() => {
-    loadGiftCatalog();
     if (sessionId) {
       loadExistingSetup(sessionId);
     } else {
@@ -54,30 +54,6 @@ export default function BeatTheBankerSetupPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
-
-  async function loadGiftCatalog() {
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      setError("Missing Supabase environment variables.");
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/tiktok_gifts?active=eq.true&order=gift_value.asc`,
-        {
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-          },
-        }
-      );
-
-      const data = await res.json();
-      setGiftCatalog(data || []);
-    } catch (err) {
-      setError("Unable to load gift catalog.");
-    }
-  }
 
   async function loadExistingSetup(id: string) {
     if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -243,8 +219,8 @@ export default function BeatTheBankerSetupPage() {
   }
 
   const giftOptions = sortedGiftCatalog.map((gift) => (
-    <option key={gift.id} value={gift.gift_name}>
-      {gift.gift_name} — {gift.gift_value} pts
+    <option key={gift.id} value={gift.name}>
+      {gift.name} — {gift.value} pts
     </option>
   ));
 
@@ -261,7 +237,7 @@ export default function BeatTheBankerSetupPage() {
             Configure the pre-game experience for your TikTok audience. Choose a trigger gift to hand control to the contestant, assign a jackpot gift, and build the full 22-box prize board for Beat The Banker.
           </p>
           <p className="mt-4 text-sm text-slate-400">
-            After saving, you can launch the session from the game page and allow viewers to use chat commands like <span className="font-semibold">open box 10</span>, <span className="font-semibold">deal</span>, and <span className="font-semibold">no deal</span>.
+            After saving, you can launch the session from the game page and allow viewers to use chat commands like <span className="font-semibold">open box 10</span>, <span className="font-semibold">stay</span>, or <span className="font-semibold">split</span>.
           </p>
         </div>
 
@@ -342,7 +318,7 @@ export default function BeatTheBankerSetupPage() {
                     <ul className="space-y-1">
                       {sortedGiftCatalog.slice(0, 8).map((gift) => (
                         <li key={gift.id}>
-                          {gift.gift_name} — {gift.gift_value}
+                          {gift.name} — {gift.value}
                         </li>
                       ))}
                       {sortedGiftCatalog.length > 8 && (
@@ -409,7 +385,7 @@ export default function BeatTheBankerSetupPage() {
             <button
               disabled={!canSave || status === "saving"}
               type="submit"
-              className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-4 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-4 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {status === "saving" ? "Saving setup..." : "Save and Launch Game"}
             </button>
