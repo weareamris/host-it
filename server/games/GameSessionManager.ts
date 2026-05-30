@@ -11,6 +11,8 @@ type GameSession = {
 
   bankerOffer: number | null;
 
+  boxesOpenedThisRound: number;
+
   status: string;
 
   boxes: {
