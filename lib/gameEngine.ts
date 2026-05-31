@@ -1,4 +1,12 @@
-export { generateGameBoard } from "./prizeRegistry";
+export {
+  generateGameBoard,
+  PRIZE_REGISTRY,
+  ACTIVE_PRIZES,
+  shuffleArray,
+  buildPrizePool,
+  type Prize,
+  type PrizeRarity,
+} from "./prizeRegistry";
 
 export const ROUND_CONFIG = [
   5,
