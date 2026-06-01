@@ -720,25 +720,28 @@ export default function BeatTheBankerSessionPage({
     );
 
     if (!found)
-      return "border-yellow-700 text-yellow-300";
+      return "border-yellow-600 text-yellow-300 bg-yellow-950/30";
 
     if (found.rarity === "legendary") {
-      return "border-red-500 text-red-400 bg-red-950/30";
+      return "border-yellow-400 text-yellow-200 bg-yellow-900/40";
     }
 
     if (found.rarity === "epic") {
-      return "border-purple-500 text-purple-300 bg-purple-950/20";
+      return "border-red-500 text-red-300 bg-red-950/30";
     }
 
     if (found.rarity === "rare") {
       return "border-cyan-500 text-cyan-300 bg-cyan-950/20";
     }
 
-    return "border-yellow-700 text-yellow-300";
+    return "border-green-600 text-green-300 bg-green-950/20";
   }
 
   return (
-    <main className="min-h-screen bg-black text-white overflow-hidden p-3 relative">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden p-3 relative">
+      {/* Background gradient overlays */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,255,255,0.08),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,0,255,0.08),transparent_50%)]" />
 
       {jackpotExplosion && (
         <div className="fixed inset-0 z-[70] pointer-events-none">
@@ -790,15 +793,15 @@ export default function BeatTheBankerSessionPage({
       )}
 
       {finalReveal && (
-        <div className="fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center">
+        <div className="fixed inset-0 bg-gradient-to-br from-yellow-600/40 to-black z-[60] flex flex-col items-center justify-center">
 
           <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-black animate-pulse" />
 
-          <h1 className="text-7xl font-black text-yellow-400 mb-10 animate-pulse">
+          <h1 className="text-7xl font-black text-yellow-300 mb-10 animate-pulse relative z-10">
             FINAL BOX
           </h1>
 
-          <div className="border-[10px] border-yellow-500 bg-yellow-400 rounded-[40px] px-24 py-16 shadow-[0_0_80px_gold] animate-bounce">
+          <div className="border-[10px] border-yellow-500 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-[40px] px-24 py-16 shadow-[0_0_80px_rgba(250,204,21,0.5)] animate-bounce relative z-10">
 
             <h2 className="text-8xl font-black text-black">
               {finalReward}
@@ -811,7 +814,7 @@ export default function BeatTheBankerSessionPage({
       {isRevealing && revealedReward && (
         <div className="fixed inset-0 bg-black/90 z-40 flex items-center justify-center">
 
-          <div className="border-4 border-yellow-500 bg-yellow-400 rounded-3xl px-24 py-14 animate-pulse shadow-[0_0_60px_gold]">
+          <div className="border-4 border-yellow-500 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-3xl px-24 py-14 animate-pulse shadow-[0_0_60px_rgba(250,204,21,0.6)]">
 
             <h1 className="text-7xl font-black text-black">
               {revealedReward}
@@ -824,13 +827,13 @@ export default function BeatTheBankerSessionPage({
       {showBanker && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
 
-          <div className="bg-zinc-900 border-4 border-yellow-500 rounded-[40px] p-10 w-[620px] text-center shadow-[0_0_60px_gold] animate-pulse">
+          <div className="bg-gradient-to-br from-slate-800 to-blue-900 border-4 border-yellow-500 rounded-[40px] p-10 w-[620px] text-center shadow-[0_0_60px_rgba(250,204,21,0.4)] animate-pulse">
 
             <h2 className="text-6xl font-black text-yellow-400 mb-6">
               BANKER OFFER
             </h2>
 
-            <div className="text-7xl font-black text-green-400 mb-8">
+            <div className="text-7xl font-black text-yellow-300 mb-8">
               {calculateBankerOffer()}
             </div>
 
@@ -849,69 +852,109 @@ export default function BeatTheBankerSessionPage({
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-2">
+      <div className="relative z-10 flex justify-between items-center mb-4 px-2">
 
         <div>
-          <h1 className="text-4xl font-black text-yellow-400 tracking-widest">
+          <h1 className="text-5xl font-black text-yellow-400 tracking-widest drop-shadow-lg">
             BEAT THE BANKER
           </h1>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-sm text-cyan-300 mt-1 drop-shadow">
             {message}
           </p>
         </div>
 
         <button
           onClick={resetGame}
-          className="border border-red-500 text-red-400 px-3 py-1 text-xs hover:bg-red-500 hover:text-black transition-all"
+          className="border-2 border-red-500 text-red-400 px-4 py-2 text-sm font-bold hover:bg-red-500 hover:text-white transition-all rounded-lg"
         >
           RESET
         </button>
       </div>
 
-      <div className="flex gap-3">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_1fr_320px] gap-4 h-[calc(100vh-120px)]">
 
-        <div className="w-[720px]">
+        {/* LEFT SECTION - PRIZES REMAINING */}
+        <div className="rounded-[24px] border-2 border-cyan-500/40 bg-slate-900/80 backdrop-blur p-6 overflow-hidden flex flex-col">
+          <h2 className="text-2xl font-black text-cyan-300 mb-4 uppercase tracking-wide">
+            Prizes Remaining
+          </h2>
+          
+          <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-green-400 uppercase">LOW</p>
+              {leftRewards.map((reward) => (
+                <div
+                  key={reward.id}
+                  className={`border-2 rounded-xl px-3 py-2 text-center text-sm font-black transition-all ${rarityClass(
+                    reward.reward
+                  )}`}
+                >
+                  {reward.reward}
+                </div>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-4 gap-2 mb-3">
-
-            <InfoCard
-              title="PLAYER SAFE"
-              value={
-                controller?.player_box || "CHOOSE"
-              }
-              color="cyan"
-            />
-
-            <InfoCard
-              title="BANKER"
-              value={String(
-                calculateBankerOffer()
-              )}
-              color="yellow"
-            />
-
-            <InfoCard
-              title="ROUND"
-              value={String(
-                controller?.current_round || 1
-              )}
-              color="purple"
-            />
-
-            <InfoCard
-              title="TO OPEN"
-              value={String(
-                currentRoundTarget() -
-                  (controller?.boxes_opened_this_round ||
-                    0)
-              )}
-              color="green"
-            />
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-red-400 uppercase">HIGH</p>
+              {rightRewards.map((reward) => (
+                <div
+                  key={reward.id}
+                  className={`border-2 rounded-xl px-3 py-2 text-center text-sm font-black transition-all ${rarityClass(
+                    reward.reward
+                  )}`}
+                >
+                  {reward.reward}
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-2">
+          {/* Rarity Legend */}
+          <div className="mt-4 pt-4 border-t border-cyan-500/30 text-xs space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-green-300">COMMON</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-cyan-500" />
+              <span className="text-cyan-300">UNCOMMON</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-purple-500" />
+              <span className="text-purple-300">RARE</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-red-300">EPIC</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span className="text-yellow-300">LEGENDARY</span>
+            </div>
+          </div>
+        </div>
 
+        {/* CENTER SECTION - GAME BOARD */}
+        <div className="rounded-[28px] border-2 border-yellow-500/50 bg-gradient-to-br from-slate-800/80 to-blue-900/80 backdrop-blur p-6 flex flex-col">
+          
+          {/* Contestant Box */}
+          <div className="text-center mb-4">
+            <p className="text-xl font-bold text-yellow-300 mb-2 uppercase tracking-wide">CONTESTANT BOX</p>
+            <div className="relative h-40 mx-auto max-w-[200px]">
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1/3 h-2 rounded-full border-2 border-yellow-200 bg-gradient-to-b from-yellow-100 to-yellow-700 z-20" />
+              <div className="absolute inset-0 rounded-2xl border-4 border-yellow-300 bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 shadow-[0_0_30px_rgba(250,204,21,0.5)]" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
+                <div className="text-6xl font-black text-black leading-none">
+                  {controller?.player_box?.replace("box ", "") || "?"}
+                </div>
+                <div className="text-lg font-black text-black mt-2 tracking-wider">SAFE</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Box Grid */}
+          <div className="flex-1 grid grid-cols-5 gap-2 overflow-hidden">
             {visibleBoxes.map((box) => (
               <Box
                 key={box}
@@ -921,92 +964,82 @@ export default function BeatTheBankerSessionPage({
               />
             ))}
           </div>
-
-          <div className="mt-3 border border-zinc-700 bg-zinc-900 rounded-xl p-2">
-
-            <p className="text-xs text-yellow-400 font-bold mb-2">
-              NEXT PLAYERS
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-
-              {queue.map((q) => (
-                <div
-                  key={q.id}
-                  className="border border-zinc-600 rounded px-2 py-1 text-[10px]"
-                >
-                  #{q.queue_position} @{q.username}
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        <div className="flex-1 border-4 border-yellow-500 bg-zinc-900 rounded-3xl p-4 h-fit">
-
-          <h2 className="text-center text-yellow-400 font-black text-lg mb-3">
-            REMAINING GIFTS
-          </h2>
-
-          <div className="grid grid-cols-2 gap-x-4">
-
-            <div className="space-y-1">
-
-              {leftRewards.map((reward) => (
-                <div
-                  key={reward.id}
-                  className={`border rounded px-3 py-[2px] text-center text-xs font-bold ${rarityClass(
-                    reward.reward
-                  )}`}
-                >
-                  {reward.reward}
-                </div>
-              ))}
+        {/* RIGHT SECTION - WHO'S PLAYING & GAME STATUS */}
+        <div className="rounded-[24px] border-2 border-cyan-500/40 bg-slate-900/80 backdrop-blur p-6 flex flex-col space-y-6">
+          
+          {/* Current Contestant */}
+          <div className="rounded-2xl border border-cyan-500/50 bg-slate-800/50 p-4">
+            <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2">WHO'S PLAYING</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                <span className="text-white font-black">👤</span>
+              </div>
+              <div>
+                <p className="text-lg font-black text-cyan-300">
+                  @{controller?.username || "WAITING"}
+                </p>
+                <p className="text-xs text-cyan-500 font-bold">CURRENT CONTESTANT</p>
+              </div>
             </div>
+          </div>
 
-            <div className="space-y-1">
+          {/* Game Status */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-yellow-400 uppercase tracking-wider">GAME STATUS</p>
+            
+            <div className="space-y-2">
+              <div className="bg-slate-800/50 rounded-lg p-3 border border-purple-500/30">
+                <p className="text-xs text-purple-400 font-bold uppercase">ROUND</p>
+                <p className="text-3xl font-black text-purple-300">{controller?.current_round || 1}</p>
+              </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-3 border border-green-500/30">
+                <p className="text-xs text-green-400 font-bold uppercase">BOXES REMAINING</p>
+                <p className="text-3xl font-black text-green-300">
+                  {boxes.length - openedBoxes.length}
+                </p>
+              </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-3 border border-yellow-500/30">
+                <p className="text-xs text-yellow-400 font-bold uppercase">BANKER OFFER</p>
+                <p className="text-3xl font-black text-yellow-300">
+                  {calculateBankerOffer()}
+                </p>
+              </div>
+            </div>
+          </div>
 
-              {rightRewards.map((reward) => (
-                <div
-                  key={reward.id}
-                  className={`border rounded px-3 py-[2px] text-center text-xs font-bold ${rarityClass(
-                    reward.reward
-                  )}`}
-                >
-                  {reward.reward}
-                </div>
-              ))}
+          {/* Chat Commands */}
+          <div className="space-y-2 mt-auto">
+            <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">CHAT COMMANDS</p>
+            
+            <div className="space-y-2">
+              <div className="bg-slate-800/50 rounded-lg p-2 border-l-2 border-yellow-500">
+                <p className="font-mono text-xs font-bold text-yellow-400">OPEN &lt;BOX #&gt;</p>
+                <p className="text-[10px] text-slate-300">Example: OPEN 12</p>
+              </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-2 border-l-2 border-cyan-500">
+                <p className="font-mono text-xs font-bold text-cyan-400">KEEP &lt;BOX #&gt;</p>
+                <p className="text-[10px] text-slate-300">Example: KEEP 7</p>
+              </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-2 border-l-2 border-green-500">
+                <p className="font-mono text-xs font-bold text-green-400">DEAL</p>
+                <p className="text-[10px] text-slate-300">Take the banker's offer</p>
+              </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-2 border-l-2 border-red-500">
+                <p className="font-mono text-xs font-bold text-red-400">NO DEAL</p>
+                <p className="text-[10px] text-slate-300">Decline the offer</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </main>
-  );
-}
-
-function InfoCard({
-  title,
-  value,
-  color,
-}: {
-  title: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div
-      className={`border border-${color}-500 bg-zinc-900 rounded-xl p-2 text-center`}
-    >
-      <p className={`text-[9px] text-${color}-300`}>
-        {title}
-      </p>
-
-      <p
-        className={`text-xl font-black text-${color}-400`}
-      >
-        {value}
-      </p>
-    </div>
   );
 }
 
@@ -1027,21 +1060,21 @@ function Box({
 
   return (
     <div
-      className={`h-16 rounded-xl border-2 flex items-center justify-center text-[11px] font-bold transition-all duration-700 shadow-lg ${
+      className={`rounded-xl border-4 flex items-center justify-center text-lg font-black transition-all duration-700 shadow-lg ${
         opened
-          ? "bg-green-700 border-green-400"
-          : "bg-yellow-500 border-yellow-300 text-black"
+          ? "bg-gradient-to-br from-green-600 to-green-800 border-green-400 text-green-100"
+          : "bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300 text-black hover:scale-105"
       } ${
         isOpening
-          ? "scale-110 animate-pulse ring-4 ring-yellow-300 rotate-2"
-          : "hover:scale-105"
+          ? "scale-110 animate-pulse ring-4 ring-yellow-300 rotate-2 shadow-[0_0_20px_rgba(250,204,21,0.6)]"
+          : ""
       }`}
     >
       {opened
-        ? "OPENED"
+        ? "✓ OPENED"
         : isOpening
-        ? "OPENING..."
-        : box.toUpperCase()}
+        ? "..."
+        : box.toUpperCase().replace("BOX ", "")}
     </div>
   );
 }
