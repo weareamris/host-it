@@ -77,6 +77,7 @@ export class TikTokConnector {
               data.giftName,
             amount:
               data.repeatCount,
+            sessionId: this.gameId,
           };
 
           console.log(

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PRIZE_REGISTRY } from "@/lib/giftRegistry";
+import { PRIZE_REGISTRY } from "@/lib/prizeRegistry";
 
 type TikTokGift = {
   id: number;
@@ -40,11 +40,16 @@ export default function BeatTheBankerSetupPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const sortedGiftCatalog = useMemo(() => {
     return [...giftCatalog].sort((a, b) => a.value - b.value);
   }, [giftCatalog]);
+
+  // Helper to normalize gift names for matching
+  const normalizeGiftName = (name: string) => {
+    return name.toLowerCase().replace(/[\s-]/g, '');
+  };
 
   useEffect(() => {
     if (sessionId) {

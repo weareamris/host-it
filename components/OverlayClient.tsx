@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { PRIZE_REGISTRY } from "@/lib/giftRegistry";
+import { PRIZE_REGISTRY } from "@/lib/prizeRegistry";
 
 type OverlayEvent = {
   type: string;

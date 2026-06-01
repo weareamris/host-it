@@ -6,7 +6,8 @@ class ConnectorManager {
 
   async startConnection(
     streamerId: string,
-    username: string
+    username: string,
+    sessionId?: string
   ) {
     const existing =
       this.connectors.get(streamerId);
@@ -22,7 +23,8 @@ class ConnectorManager {
     const connector =
       new TikTokConnector(
         streamerId,
-        username
+        username,
+        sessionId
       );
 
     await connector.connect();

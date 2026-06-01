@@ -1,5 +1,15 @@
 import { broadcastToOverlay } from "@/server/websocket/SocketServer";
 
+// Helper to safely broadcast without crashing if socket is not initialized
+const safeBroadcast = (streamer: string, event: string, data: any) => {
+  try {
+    broadcastToOverlay(streamer, event, data);
+  } catch (error) {
+    // Socket not initialized, silently fail
+    console.debug(`[PlayerManager] Broadcast skipped - socket not ready: ${event}`);
+  }
+};
+
 export type Player = {
   id: string;
   tiktokUsername: string;
@@ -27,7 +37,7 @@ class PlayerManager {
     streamerPlayers.push(player);
     this.players.set(streamer, streamerPlayers);
 
-    broadcastToOverlay(streamer, "player-joined-stream", {
+    safeBroadcast(streamer, "player-joined-stream", {
       player,
       totalPlayers: streamerPlayers.length,
     });
@@ -59,7 +69,7 @@ class PlayerManager {
     player.isController = true;
     this.controllers.set(streamer, playerId);
 
-    broadcastToOverlay(streamer, "controller-changed", {
+    safeBroadcast(streamer, "controller-changed", {
       controllerId: playerId,
       controller: player,
     });
@@ -97,7 +107,7 @@ class PlayerManager {
 
     this.players.set(streamer, players);
 
-    broadcastToOverlay(streamer, "player-left-stream", {
+    safeBroadcast(streamer, "player-left-stream", {
       playerId,
       username: removed.tiktokUsername,
       totalPlayers: players.length,

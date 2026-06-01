@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabaseClient";
 
@@ -19,6 +19,36 @@ export default function Dashboard() {
   const [activeSubscription, setActiveSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tiktokUsername, setTiktokUsername] = useState<string | null>(null);
+  const [connectorStatus, setConnectorStatus] = useState<string>("disconnected");
+
+  const autoConnectTikTok = useCallback(async (username: string, token: string) => {
+    try {
+      const response = await fetch("/api/connectors/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          streamerUsername: username,
+          sessionCode: `dashboard-${Date.now()}`,
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setConnectorStatus("online");
+        console.log(`Auto-connected TikTok: @${username}`);
+      } else {
+        setConnectorStatus("error");
+        console.error("Failed to auto-connect TikTok");
+      }
+    } catch (error) {
+      console.error("Auto-connect error:", error);
+      setConnectorStatus("error");
+    }
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -42,6 +72,24 @@ export default function Dashboard() {
         setSession(session);
 
         const token = session.access_token;
+        
+        // Fetch user profile with TikTok username
+        try {
+          const profileResponse = await fetch("/api/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const profileData = await profileResponse.json();
+          if (profileData.tiktokUsername) {
+            setTiktokUsername(profileData.tiktokUsername);
+            // Auto-connect TikTok if username exists
+            await autoConnectTikTok(profileData.tiktokUsername, token);
+          }
+        } catch (profileError) {
+          console.error("Failed to fetch profile:", profileError);
+        }
+
         const subscriptionResponse = await fetch("/api/subscription", {
           headers: {
             Authorization: `Bearer ${token}`,

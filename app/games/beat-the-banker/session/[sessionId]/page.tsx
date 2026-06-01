@@ -129,7 +129,7 @@ export default function BeatTheBankerSessionPage({
     process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   const SUPABASE_KEY =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   async function loadStreamerSettings() {
     const res = await fetch(
@@ -639,8 +639,38 @@ export default function BeatTheBankerSessionPage({
       new Audio("/sounds/no-deal.mp3");
   }, []);
 
+  // Auto-connect TikTok when session loads
   useEffect(() => {
-    loadStreamerSettings();
+    async function autoConnectSession() {
+      try {
+        // First load settings to get trigger gift info
+        await loadStreamerSettings();
+        
+        // Auto-start TikTok connector for this session
+        const response = await fetch("/api/connectors/start", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            streamerUsername: "s1lvabull3tgaming", // Default streamer - should come from user profile
+            sessionId: sessionId,
+            sessionCode: `session-${sessionId}`,
+          }),
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          console.log(`TikTok connector started for session ${sessionId}`);
+        }
+      } catch (error) {
+        console.error("Failed to auto-connect session:", error);
+      }
+    }
+    
+    autoConnectSession();
+    
+    // Continue with other loads
     loadGiftCatalog();
     loadGameConfig();
     loadController();
